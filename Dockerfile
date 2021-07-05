@@ -12,5 +12,5 @@ COPY . /usr/src/app
 RUN npm run deploy-kovan
 
 # Bare in mind, expose is not supported by heroku. This is only for local testing.
-EXPOSE $PORT
+EXPOSE 3000
 CMD ["npm", "start"]
