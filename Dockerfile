@@ -5,10 +5,11 @@ WORKDIR /usr/src/app
 
 # Install app dependencies
 COPY package*.json ./
-RUN npm install --loglevel verbose
+RUN npm install -g solc
 
 # Bundle app source
 COPY . /usr/src/app
+RUN npm run deploy-kovan
 
 # Bare in mind, expose is not supported by heroku. This is only for local testing.
 EXPOSE $PORT
