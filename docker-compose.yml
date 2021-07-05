@@ -3,13 +3,5 @@ services:
   app:
     container_name: smartcontract-api
     build: ./
-    environment:
-      - PORT=3000
-    networks:
-      - smartcontract-net
     ports:
-      - 3000:3000
-
-networks:
-  smartcontract-net:
-    driver: bridge
+      - "3000:3000"
