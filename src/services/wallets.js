@@ -26,8 +26,10 @@ const getWalletsData = () => () => {
   return accounts;
 };
 
-const getWalletData = () => index => {
-  return accounts[index - 1];
+const getWalletData = () => async address => {
+  const provider = new ethers.providers.InfuraProvider("kovan", process.env.INFURA_API_KEY);
+  const balance = await provider.getBalance(address); // ToDo cambiar nombre
+  return {balance: ethers.utils.formatEther(balance)};
 };
 
 const getWallet = ({}) => index => {
