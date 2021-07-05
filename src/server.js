@@ -11,7 +11,7 @@ routes.forEach(route => fastify.route(route({ config, services })));
 // Run the server!
 const start = async () => {
   try {
-    await fastify.listen(3000, '0.0.0.0', function (err, address) {
+    await fastify.listen(process.env.PORT || 3000, '0.0.0.0', function (err, address) {
       if (err) {
         fastify.log.error(err)
         process.exit(1)
