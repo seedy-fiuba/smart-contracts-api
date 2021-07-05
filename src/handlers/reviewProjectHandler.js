@@ -7,6 +7,9 @@ function schema() {
           type: "integer",
         },
         completedStage: {
+          type: "integer",
+        },
+        reviewerPrivateKey: {
           type: "string",
         }
       },
@@ -19,8 +22,8 @@ function handler({ contractInteraction, walletService }) {
   return async function (req, reply) {
     console.log(`project_id: ${req.params.projectId} completedStage: ${req.body.completedStage}`)
 
-    let deployerWallet = walletService.getDeployerWallet();
-    const tx = contractInteraction.reviewProject(deployerWallet, req.params.projectId, req.body.completedStage);
+    let reviewerWallet = walletService.getWallet(req.body.reviewerPrivateKey)
+    const tx = contractInteraction.reviewProject(reviewerWallet, req.params.projectId, req.body.completedStage);
 
     console.log(tx)
 

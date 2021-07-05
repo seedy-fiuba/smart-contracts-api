@@ -73,12 +73,12 @@ const fundProject = ({ config }) => async (
   return tx;
 };
 
-const reviewProject = ({ config }) => async (
-  deployerWallet,
+const reviewProject = ({ config }) => async ( // El que firma el contrato tiene que ser el reviewer
+  reviewerWallet,
   projectId,
   completedStage
 ) => {
-  const bookBnb = await getContract(config, deployerWallet);
+  const bookBnb = await getContract(config, reviewerWallet);
   const tx = await bookBnb.setCompletedStage(projectId, completedStage)
   tx.wait(1).then(receipt => {
     console.log("Transaction mined");
