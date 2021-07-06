@@ -24,16 +24,13 @@ function handler({ contractInteraction, walletService }) {
     console.log(`project_id: ${req.params.projectId} privateKey: ${req.body.funderPrivateKey} amount: ${req.body.amount}`)
 
     let funderWallet = walletService.getWallet(req.body.funderPrivateKey)
-    const tx = contractInteraction.fundProject(funderWallet, req.body.amount, req.params.projectId);
+    const contractResponse = await contractInteraction.fundProject(funderWallet, req.body.amount, req.params.projectId);
 
-    console.log(tx)
+    if (contractResponse.status != "ok") {
+      reply.code(500).send(contractResponse);
+    }
 
-    reply.code(200).send({
-      projectId: req.params.projectId,
-      funderPrivateKey: req.body.funderPrivateKey,
-      amount: req.body.amount,
-      tx: JSON.stringify(tx)
-    });
+    reply.code(200).send(contractResponse.result);
   };
 }
 

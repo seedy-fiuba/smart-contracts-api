@@ -10,6 +10,11 @@ const toWei = number => {
   return BigNumber(number).times(WEIS_IN_ETHER).toFixed();
 };
 
+const weiToEthers = number => {
+  const WEIS_IN_ETHER = BigNumber(10).pow(-18);
+  return BigNumber(number).times(WEIS_IN_ETHER).toFixed();
+};
+
 const projects = {};
 
 const createProject = ({ config }) => async (
@@ -74,30 +79,56 @@ const fundProject = ({ config }) => async (
 ) => {
   const seedyFiubaContract = await getContract(config, funderWallet);
   const tx = await seedyFiubaContract.fund(projectId, { value: toWei(amountToFund) });
-  tx.wait(1).then(receipt => {
+  return tx.wait(1).then(receipt => {
     console.log("Transaction mined");
+    response = {}
 
     const firstEvent = receipt && receipt.events && receipt.events[0];
     console.log(firstEvent);
+
     if (firstEvent && firstEvent.event == "ProjectFunded") {
       const projectId = firstEvent.args.projectId.toNumber();
-      console.log(tx.hash);
-      console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder}`)
-      // ToDo devolver toda esta info, persistir tx hash como recibo de la operacion
+      const fundsReceived = weiToEthers(firstEvent.args.funds.toNumber());
+      console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder} in tx ${tx.hash}`)
+
+      response = {
+        status: "ok",
+        result: {
+          txHash: tx.hash,
+          projectWalletId: projectId,
+          fundsReceived: fundsReceived,
+          funderAddress: firstEvent.args.funder,
+          projectStatus: "FUNDING", // Cambiar estos valores si llega a haber segundo evento
+        }
+      }
     } else {
       console.error(`Project not funded in tx ${tx.hash}`);
+      return {
+        status: "failed",
+        error: `Couldn't fund project in tx ${tx.hash}`
+      }
     }
 
     const secondEvent = receipt && receipt.events && receipt.events[1];
     console.log(secondEvent);
+
     if (secondEvent && secondEvent.event == "ProjectStarted") {
       const projectId = secondEvent.args.projectId.toNumber();
-      console.log(tx.hash);
-      console.log(`Project started ${projectId}`) // Supuestamente esto es que no queda mas missing amount
-      // ToDo se podria devolver como un status nuevo del proyecto
+
+      console.log(`Project started ${projectId} in tx ${tx.hash}`)
+
+      response['result']['projectStatus'] = "IN_PROGRESS"
+    }
+
+    return response
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
     }
   });
-  return tx; 
 };
 
 const reviewProject = ({ config }) => async ( // El que firma el contrato tiene que ser el reviewer
