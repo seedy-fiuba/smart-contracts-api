@@ -32,10 +32,10 @@ const getWalletData = () => async address => {
   return {balance: ethers.utils.formatEther(balance)};
 };
 
-const getWallet = ({}) => index => {
+const getWallet = ({}) => privateKey => {
   const provider = new ethers.providers.InfuraProvider("kovan", process.env.INFURA_API_KEY);
 
-  return new ethers.Wallet(accounts[index - 1].privateKey, provider);
+  return new ethers.Wallet(privateKey, provider);
 };
 
 module.exports = ({ config }) => ({

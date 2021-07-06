@@ -70,7 +70,7 @@ const fundProject = ({ config }) => async (
       // ToDo se podria devolver como un status nuevo del proyecto
     }
   });
-  return tx;
+  return tx; 
 };
 
 const reviewProject = ({ config }) => async ( // El que firma el contrato tiene que ser el reviewer
