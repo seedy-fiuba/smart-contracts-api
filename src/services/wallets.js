@@ -26,9 +26,10 @@ const getWalletsData = () => () => {
   return accounts;
 };
 
-const getWalletBalance = () => async address => {
+const getWalletBalance = () => async privateKey => {
   const provider = new ethers.providers.InfuraProvider("kovan", process.env.INFURA_API_KEY);
-  const balance = await provider.getBalance(address); // ToDo cambiar nombre
+  const wallet = new ethers.Wallet(privateKey, provider);
+  const balance = await provider.getBalance(wallet.address);
   return {balance: ethers.utils.formatEther(balance)};
 };
 
@@ -47,5 +48,6 @@ module.exports = ({ config }) => ({
   getDeployerWallet: getDeployerWallet({ config }),
   getWalletsData: getWalletsData({ config }),
   getWalletData: getWalletData({ config }),
+  getWalletBalance: getWalletBalance({ config }),
   getWallet: getWallet({ config }),
 });

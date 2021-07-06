@@ -1,4 +1,4 @@
-const getWalletData = require("./handlers/getWalletHandler");
+const getWallet = require("./handlers/getWalletHandler");
 const getWalletsData = require("./handlers/getWalletsHandler");
 const createWallet = require("./handlers/createWalletHandler");
 const createProject = require("./handlers/createProjectHandler");
@@ -10,8 +10,8 @@ function getWalletDataRoute({ services, config }) {
   return {
     method: "GET",
     url: "/wallet/:id",
-    schema: getWalletData.schema(config),
-    handler: getWalletData.handler({ config, ...services }),
+    schema: getWallet.schema(config),
+    handler: getWallet.handler({ config, ...services }),
   };
 }
 
