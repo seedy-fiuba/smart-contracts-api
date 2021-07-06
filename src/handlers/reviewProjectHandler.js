@@ -23,15 +23,13 @@ function handler({ contractInteraction, walletService }) {
     console.log(`project_id: ${req.params.projectId} completedStage: ${req.body.completedStage}`)
 
     let reviewerWallet = walletService.getWallet(req.body.reviewerPrivateKey)
-    const tx = contractInteraction.reviewProject(reviewerWallet, req.params.projectId, req.body.completedStage);
+    const contractResponse = await contractInteraction.reviewProject(reviewerWallet, req.params.projectId, req.body.completedStage);
 
-    console.log(tx)
+    if (contractResponse.status != "ok") {
+      reply.code(500).send(contractResponse);
+    }
 
-    reply.code(200).send({
-      projectId: req.params.projectId,
-      completedStage: req.body.completedStage,
-      tx: JSON.stringify(tx)
-    });
+    reply.code(200).send(contractResponse.result);
   };
 }
 

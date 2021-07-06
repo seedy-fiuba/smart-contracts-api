@@ -138,16 +138,34 @@ const reviewProject = ({ config }) => async ( // El que firma el contrato tiene 
 ) => {
   const bookBnb = await getContract(config, reviewerWallet);
   const tx = await bookBnb.setCompletedStage(projectId, completedStage)
-  tx.wait(1).then(receipt => {
+  return tx.wait(1).then(receipt => {
     console.log("Transaction mined");
+    response = {}
+
     const firstEvent = receipt && receipt.events && receipt.events[0];
     console.log(firstEvent);
+
     if (firstEvent && firstEvent.event == "StageCompleted") {
       const projectId = firstEvent.args.projectId.toNumber();
+      const stageCompleted = firstEvent.args.stageCompleted.toNumber();
+
       console.log(`project ${projectId} completed stage ${firstEvent.args.stageCompleted}`);
-      // ToDo se podria devolver esta info en el response
+      
+      response = {
+        status: "ok",
+        result: {
+          txHash: tx.hash,
+          projectWalletId: projectId,
+          stageCompleted: stageCompleted,
+          projectStatus: "IN_PROGRESS", // Cambiar estos valores si llega a haber segundo evento
+        }
+      }
     } else {
-      console.error(`Project not advanced from stage in tx ${tx.hash}`);
+      console.error(`Project not funded in tx ${tx.hash}`);
+      return {
+        status: "failed",
+        error: `Couldn't fund project in tx ${tx.hash}`
+      }
     }
 
     const secondEvent = receipt && receipt.events && receipt.events[1];
@@ -155,10 +173,19 @@ const reviewProject = ({ config }) => async ( // El que firma el contrato tiene 
     if (secondEvent && secondEvent.event == "ProjectCompleted") {
       const projectId = secondEvent.args.projectId.toNumber();
       console.log(`project ${projectId} completed all stages !`);
-      // ToDo se podria devolver esta info en el response
+      
+      response['result']['projectStatus'] = "COMPLETED"
+    }
+
+    return response
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
     }
   });
-  return tx;
 };
 
 const getProject = () => async id => {
