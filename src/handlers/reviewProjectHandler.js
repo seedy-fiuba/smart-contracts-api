@@ -14,7 +14,7 @@ function schema() {
         }
       },
     },
-    required: ["projectId", "completedStage"],
+    required: ["projectId", "completedStage", "reviewerPrivateKey"],
   };
 }
 

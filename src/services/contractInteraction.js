@@ -92,7 +92,7 @@ const reviewProject = ({ config }) => async ( // El que firma el contrato tiene 
       console.error(`Project not advanced from stage in tx ${tx.hash}`);
     }
 
-    const secondEvent = receipt && receipt.events && receipt.events[0];
+    const secondEvent = receipt && receipt.events && receipt.events[1];
     console.log(secondEvent);
     if (secondEvent && secondEvent.event == "ProjectCompleted") {
       const projectId = secondEvent.args.projectId.toNumber();
