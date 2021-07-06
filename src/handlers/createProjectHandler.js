@@ -3,11 +3,11 @@ function schema() {
     params: {
       type: "object",
       properties: {
-        ownerId: {
-          type: "integer",
+        ownerPrivateKey: {
+          type: "string",
         },
-        reviewerId: {
-          type: "integer",
+        reviewerPrivateKey: {
+          type: "string",
         },
         stagesCost: {
           type: "array",
@@ -16,18 +16,25 @@ function schema() {
         },
       },
     },
-    required: ["ownerId", "reviewerId", "stagesCost"],
+    required: ["ownerPrivateKey", "reviewerPrivateKey", "stagesCost"],
   };
 }
 
 function handler({ contractInteraction, walletService }) {
-  return async function (req) {
-    return contractInteraction.createProject(
+  return async function (req, reply) {
+    console.log(`ownerPrivateKey ${req.body.ownerPrivateKey}, reviewerPrivateKey ${req.body.reviewerPrivateKey}, stagesCost ${req.body.stagesCost}`)
+    let contractResponse = await contractInteraction.createProject(
       walletService.getDeployerWallet(),
       req.body.stagesCost,
-      walletService.getWalletData(req.body.ownerId).address,
-      walletService.getWalletData(req.body.reviewerId).address,
+      walletService.getWallet(req.body.ownerPrivateKey).address,
+      walletService.getWallet(req.body.reviewerPrivateKey).address,
     );
+
+    if (contractResponse.status != "ok") {
+      reply.code(500).send(contractResponse);
+    }
+
+    reply.code(200).send(contractResponse.result);
   };
 }
 

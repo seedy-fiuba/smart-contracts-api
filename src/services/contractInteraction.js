@@ -20,24 +20,51 @@ const createProject = ({ config }) => async (
 ) => {
   const bookBnb = await getContract(config, deployerWallet);
   const tx = await bookBnb.createProject(stagesCost.map(toWei), projectOwnerAddress, projectReviewerAddress);
-  tx.wait(1).then(receipt => {
+  return tx.wait(1).then(receipt => {
     console.log("Transaction mined");
+
     const firstEvent = receipt && receipt.events && receipt.events[0];
     console.log(firstEvent);
+    
     if (firstEvent && firstEvent.event == "ProjectCreated") {
       const projectId = firstEvent.args.projectId.toNumber();
-      console.log();
+
       projects[tx.hash] = {
         projectId,
         stagesCost,
         projectOwnerAddress,
         projectReviewerAddress,
       };
+
+      return {
+        status: "ok",
+        result: {
+          txHash: tx.hash, // Si no funciona utilizar JSON.stringify(tx)
+          projectWalletId: projectId,
+          stagesCost: stagesCost,
+          projectOwnerAddress: projectOwnerAddress,
+          projectReviewerAddress: projectReviewerAddress,
+          projectStatus: "FUNDING",
+          currentStage: 0,
+          missingAmount: stagesCost.reduce((accumulator, currentValue) => accumulator + currentValue)
+        }
+      }
     } else {
       console.error(`Project not created in tx ${tx.hash}`);
+      
+      return {
+        status: "failed",
+        error: `Couldn't create project in tx ${tx.hash}`
+      }
+    }
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
     }
   });
-  return tx;
 };
 
 const fundProject = ({ config }) => async (
