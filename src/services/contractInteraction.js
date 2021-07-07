@@ -89,7 +89,8 @@ const fundProject = ({ config }) => async (
     if (firstEvent && firstEvent.event == "ProjectFunded") {
       const projectId = firstEvent.args.projectId.toNumber();
       const fundsReceived = weiToEthers(firstEvent.args.funds.toNumber());
-      console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder} in tx ${tx.hash}`)
+      const missingAmount = weiToEthers(firstEvent.args.missingAmount.toNumber());
+      console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder} in tx ${tx.hash}. missing amount ${missingAmount}`)
 
       response = {
         status: "ok",
@@ -98,6 +99,7 @@ const fundProject = ({ config }) => async (
           projectWalletId: projectId,
           fundsReceived: fundsReceived,
           funderAddress: firstEvent.args.funder,
+          missingAmount: missingAmount,
           projectStatus: "FUNDING", // Cambiar estos valores si llega a haber segundo evento
         }
       }
