@@ -12,7 +12,7 @@ const toWei = number => {
 
 const weiToEthers = number => {
   const WEIS_IN_ETHER = BigNumber(10).pow(-18);
-  return BigNumber(number).times(WEIS_IN_ETHER).toFixed();
+  return BigNumber(number.toString()).times(WEIS_IN_ETHER).toFixed();
 };
 
 const projects = {};
@@ -88,8 +88,8 @@ const fundProject = ({ config }) => async (
 
     if (firstEvent && firstEvent.event == "ProjectFunded") {
       const projectId = firstEvent.args.projectId.toNumber();
-      const fundsReceived = weiToEthers(firstEvent.args.funds.toNumber());
-      const missingAmount = weiToEthers(firstEvent.args.missingAmount.toNumber());
+      const fundsReceived = weiToEthers(firstEvent.args.funds);
+      const missingAmount = weiToEthers(firstEvent.args.missingAmount);
       console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder} in tx ${tx.hash}. missing amount ${missingAmount}`)
 
       response = {
