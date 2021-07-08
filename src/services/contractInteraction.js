@@ -190,9 +190,11 @@ const reviewProject = ({ config }) => async ( // El que firma el contrato tiene 
   });
 };
 
-const getProject = () => async id => {
-  console.log(`Getting project ${id}: ${projects[id]}`);
-  return projects[id];
+const getProject = ({ config }) => async (id, deployerWallet) => {
+  const bookBnb = await getContract(config, deployerWallet);
+  const projectStruct = await bookBnb.projects(id);
+  console.log(`projectStruct ${projectStruct}`)
+  return projectStruct
 };
 
 module.exports = dependencies => ({

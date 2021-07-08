@@ -12,9 +12,9 @@ function schema() {
   };
 }
 
-function handler({ contractInteraction }) {
+function handler({ contractInteraction, walletService }) {
   return async function (req, reply) {
-    const body = await contractInteraction.getProject(req.params.id);
+    const body = await contractInteraction.getProject(req.params.id, walletService.getDeployerWallet());
     reply.code(200).send(body);
   };
 }
