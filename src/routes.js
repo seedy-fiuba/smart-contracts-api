@@ -5,6 +5,7 @@ const createProject = require("./handlers/createProjectHandler");
 const getProject = require("./handlers/getProjectHandler");
 const fundProject = require("./handlers/fundProjectHandler")
 const reviewProject = require("./handlers/reviewProjectHandler")
+const sendFunds = require("./handlers/sendFundsHandler")
 
 function getWalletDataRoute({ services, config }) {
   return {
@@ -69,4 +70,13 @@ function getProjectRoute({ services, config }) {
   };
 }
 
-module.exports = [getWalletDataRoute, getWalletsDataRoute, createWalletRoute, createProjectRoute, getProjectRoute, fundProjectRoute, reviewProjectRoute];
+function transferFunds({ services, config }) {
+  return {
+    method: "POST",
+    url: "/transfer/funds",
+    schema: sendFunds.schema(config),
+    handler: sendFunds.handler({ config, ...services }),
+  };
+}
+
+module.exports = [getWalletDataRoute, getWalletsDataRoute, createWalletRoute, createProjectRoute, getProjectRoute, fundProjectRoute, reviewProjectRoute, transferFunds];

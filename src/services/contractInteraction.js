@@ -190,6 +190,50 @@ const reviewProject = ({ config }) => async ( // El que firma el contrato tiene 
   });
 };
 
+const sendFunds = ({ config }) => async (
+  ownerWallet,
+  destinationAddress,
+  amount
+) => {
+  const bookBnb = await getContract(config, ownerWallet);
+  
+  console.log(amount)
+  console.log("llegaaa")
+  const tx = await bookBnb.sendViaTransfer(destinationAddress, { value: toWei(amount) });
+  return tx.wait(1).then(receipt => {
+    console.log("Transaction mined");
+
+    const firstEvent = receipt && receipt.events && receipt.events[0];
+    console.log(firstEvent);
+    
+    if (firstEvent && firstEvent.event == "FundsSent") {
+
+      return {
+        status: "ok",
+        result: {
+          txHash: tx.hash, // Si no funciona utilizar JSON.stringify(tx)
+          destinationAddress: destinationAddress,
+          amountSent: amount
+        }
+      }
+    } else {
+      console.error(`Amount not sent in tx ${tx.hash}`);
+      
+      return {
+        status: "failed",
+        error: `Couldn't send the amount in tx ${tx.hash}`
+      }
+    }
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
+    }
+  });
+};
+
 const getProject = ({ config }) => async (id, deployerWallet) => {
   const bookBnb = await getContract(config, deployerWallet);
   const projectStruct = await bookBnb.projects(id);
@@ -202,4 +246,5 @@ module.exports = dependencies => ({
   getProject: getProject(dependencies),
   fundProject: fundProject(dependencies),
   reviewProject: reviewProject(dependencies),
+  sendFunds: sendFunds(dependencies)
 });

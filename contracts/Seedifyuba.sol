@@ -45,6 +45,8 @@ contract Seedifyuba is Ownable {
     */
     event ProjectFunded(uint256 indexed projectId, address indexed funder, uint256 funds, uint256 missingAmount);
 
+    event FundsSent(address indexed funder, uint256 funds);
+
     /**
         @notice Event emitted when a project starts, i.e. all the necessary funds were received
         @param projectId Identifier of the project that started
@@ -295,6 +297,11 @@ contract Seedifyuba is Ownable {
         require(availableFunds > 0, "no funds to withdraw");
 
         _withdrawFunds(projectId, availableFunds);
+    }
+
+    function sendViaTransfer(address payable _to) public payable {
+        _to.transfer(msg.value);
+        emit FundsSent(_to, msg.value);
     }
 
     /**
