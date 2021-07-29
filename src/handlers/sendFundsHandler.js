@@ -1,3 +1,5 @@
+const metrics = require('datadog-metrics');
+
 function schema() {
   return {
     params: {
@@ -29,6 +31,9 @@ function handler({ contractInteraction, walletService }) {
     if (contractResponse.status != "ok") {
       reply.code(500).send(contractResponse);
     }
+
+    metrics.increment('retire_funds', 1, [`destination_address:${contractResponse.result.destinationAddress}`]);
+    metrics.gauge('retire_funds_amount', contractResponse.result.amountSent, [`destination_address:${contractResponse.result.destinationAddress}`]);
 
     reply.code(200).send(contractResponse.result);
   };

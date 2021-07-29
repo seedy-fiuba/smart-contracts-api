@@ -1,3 +1,5 @@
+const metrics = require('datadog-metrics');
+
 function schema() {
   return {
     params: {
@@ -30,6 +32,9 @@ function handler({ contractInteraction, walletService }) {
       reply.code(500).send(contractResponse);
     }
 
+    metrics.increment('funds_received', 1, [`project_id:${contractResponse.result.projectWalletId}`, `funder_address:${contractResponse.result.funderAddress}`, `project_status:${contractResponse.result.projectStatus}`]);
+    metrics.gauge('funds_received_amount', contractResponse.result.fundsReceived, [`project_id:${contractResponse.result.projectWalletId}`, `funder_address:${contractResponse.result.funderAddress}`, `project_status:${contractResponse.result.projectStatus}`]);
+    
     reply.code(200).send(contractResponse.result);
   };
 }
