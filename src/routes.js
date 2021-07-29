@@ -1,3 +1,4 @@
+const pingHandler = require("./handlers/pingHandler");
 const getWallet = require("./handlers/getWalletHandler");
 const getWalletsData = require("./handlers/getWalletsHandler");
 const createWallet = require("./handlers/createWalletHandler");
@@ -6,6 +7,14 @@ const getProject = require("./handlers/getProjectHandler");
 const fundProject = require("./handlers/fundProjectHandler")
 const reviewProject = require("./handlers/reviewProjectHandler")
 const sendFunds = require("./handlers/sendFundsHandler")
+
+function ping({ services, config }) {
+  return {
+    method: "GET",
+    url: "/",
+    handler: pingHandler.handler()
+  };
+}
 
 function getWalletDataRoute({ services, config }) {
   return {
@@ -79,4 +88,4 @@ function transferFunds({ services, config }) {
   };
 }
 
-module.exports = [getWalletDataRoute, getWalletsDataRoute, createWalletRoute, createProjectRoute, getProjectRoute, fundProjectRoute, reviewProjectRoute, transferFunds];
+module.exports = [ping, getWalletDataRoute, getWalletsDataRoute, createWalletRoute, createProjectRoute, getProjectRoute, fundProjectRoute, reviewProjectRoute, transferFunds];
