@@ -1,17 +1,27 @@
-const getWalletData = require("./handlers/getWalletHandler");
+const pingHandler = require("./handlers/pingHandler");
+const getWallet = require("./handlers/getWalletHandler");
 const getWalletsData = require("./handlers/getWalletsHandler");
 const createWallet = require("./handlers/createWalletHandler");
 const createProject = require("./handlers/createProjectHandler");
 const getProject = require("./handlers/getProjectHandler");
 const fundProject = require("./handlers/fundProjectHandler")
 const reviewProject = require("./handlers/reviewProjectHandler")
+const sendFunds = require("./handlers/sendFundsHandler")
+
+function ping({ services, config }) {
+  return {
+    method: "GET",
+    url: "/",
+    handler: pingHandler.handler()
+  };
+}
 
 function getWalletDataRoute({ services, config }) {
   return {
     method: "GET",
     url: "/wallet/:id",
-    schema: getWalletData.schema(config),
-    handler: getWalletData.handler({ config, ...services }),
+    schema: getWallet.schema(config),
+    handler: getWallet.handler({ config, ...services }),
   };
 }
 
@@ -69,4 +79,13 @@ function getProjectRoute({ services, config }) {
   };
 }
 
-module.exports = [getWalletDataRoute, getWalletsDataRoute, createWalletRoute, createProjectRoute, getProjectRoute, fundProjectRoute, reviewProjectRoute];
+function transferFunds({ services, config }) {
+  return {
+    method: "POST",
+    url: "/transfer/funds",
+    schema: sendFunds.schema(config),
+    handler: sendFunds.handler({ config, ...services }),
+  };
+}
+
+module.exports = [ping, getWalletDataRoute, getWalletsDataRoute, createWalletRoute, createProjectRoute, getProjectRoute, fundProjectRoute, reviewProjectRoute, transferFunds];

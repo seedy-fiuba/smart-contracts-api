@@ -1,6 +1,9 @@
 const config = require("./config");
 const services = require("./services/services")({ config });
 const routes = require("./routes");
+const metrics = require('datadog-metrics');
+
+metrics.init({ host: 'myhost', prefix: 'transactions.' });
 
 // Require the framework and instantiate it
 const fastify = require("fastify")({ logger: true });

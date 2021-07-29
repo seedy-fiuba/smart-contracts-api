@@ -1,3 +1,5 @@
+const metrics = require('datadog-metrics');
+
 function schema() {
   return {
     params: {
@@ -24,16 +26,16 @@ function handler({ contractInteraction, walletService }) {
     console.log(`project_id: ${req.params.projectId} privateKey: ${req.body.funderPrivateKey} amount: ${req.body.amount}`)
 
     let funderWallet = walletService.getWallet(req.body.funderPrivateKey)
-    const tx = contractInteraction.fundProject(funderWallet, req.body.amount, req.params.projectId);
+    const contractResponse = await contractInteraction.fundProject(funderWallet, req.body.amount, req.params.projectId);
 
-    console.log(tx)
+    if (contractResponse.status != "ok") {
+      reply.code(500).send(contractResponse);
+    }
 
-    reply.code(200).send({
-      projectId: req.params.projectId,
-      funderPrivateKey: req.body.funderPrivateKey,
-      amount: req.body.amount,
-      tx: JSON.stringify(tx)
-    });
+    metrics.increment('funds_received', 1, [`project_id:${contractResponse.result.projectWalletId}`, `funder_address:${contractResponse.result.funderAddress}`, `project_status:${contractResponse.result.projectStatus}`]);
+    metrics.gauge('funds_received_amount', contractResponse.result.fundsReceived, [`project_id:${contractResponse.result.projectWalletId}`, `funder_address:${contractResponse.result.funderAddress}`, `project_status:${contractResponse.result.projectStatus}`]);
+    
+    reply.code(200).send(contractResponse.result);
   };
 }
 

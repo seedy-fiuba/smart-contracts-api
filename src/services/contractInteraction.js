@@ -10,6 +10,11 @@ const toWei = number => {
   return BigNumber(number).times(WEIS_IN_ETHER).toFixed();
 };
 
+const weiToEthers = number => {
+  const WEIS_IN_ETHER = BigNumber(10).pow(-18);
+  return BigNumber(number.toString()).times(WEIS_IN_ETHER).toFixed();
+};
+
 const projects = {};
 
 const createProject = ({ config }) => async (
@@ -20,24 +25,51 @@ const createProject = ({ config }) => async (
 ) => {
   const bookBnb = await getContract(config, deployerWallet);
   const tx = await bookBnb.createProject(stagesCost.map(toWei), projectOwnerAddress, projectReviewerAddress);
-  tx.wait(1).then(receipt => {
+  return tx.wait(1).then(receipt => {
     console.log("Transaction mined");
+
     const firstEvent = receipt && receipt.events && receipt.events[0];
     console.log(firstEvent);
+    
     if (firstEvent && firstEvent.event == "ProjectCreated") {
       const projectId = firstEvent.args.projectId.toNumber();
-      console.log();
+
       projects[tx.hash] = {
         projectId,
         stagesCost,
         projectOwnerAddress,
         projectReviewerAddress,
       };
+
+      return {
+        status: "ok",
+        result: {
+          txHash: tx.hash, // Si no funciona utilizar JSON.stringify(tx)
+          projectWalletId: projectId,
+          stagesCost: stagesCost,
+          projectOwnerAddress: projectOwnerAddress,
+          projectReviewerAddress: projectReviewerAddress,
+          projectStatus: "FUNDING",
+          currentStage: 0,
+          missingAmount: stagesCost.reduce((accumulator, currentValue) => accumulator + currentValue)
+        }
+      }
     } else {
       console.error(`Project not created in tx ${tx.hash}`);
+      
+      return {
+        status: "failed",
+        error: `Couldn't create project in tx ${tx.hash}`
+      }
+    }
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
     }
   });
-  return tx;
 };
 
 const fundProject = ({ config }) => async (
@@ -47,30 +79,58 @@ const fundProject = ({ config }) => async (
 ) => {
   const seedyFiubaContract = await getContract(config, funderWallet);
   const tx = await seedyFiubaContract.fund(projectId, { value: toWei(amountToFund) });
-  tx.wait(1).then(receipt => {
+  return tx.wait(1).then(receipt => {
     console.log("Transaction mined");
+    response = {}
 
     const firstEvent = receipt && receipt.events && receipt.events[0];
     console.log(firstEvent);
+
     if (firstEvent && firstEvent.event == "ProjectFunded") {
       const projectId = firstEvent.args.projectId.toNumber();
-      console.log(tx.hash);
-      console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder}`)
-      // ToDo devolver toda esta info, persistir tx hash como recibo de la operacion
+      const fundsReceived = weiToEthers(firstEvent.args.funds);
+      const missingAmount = weiToEthers(firstEvent.args.missingAmount);
+      console.log(`funded project ${projectId} with ${firstEvent.args.funds} incoming from ${firstEvent.args.funder} in tx ${tx.hash}. missing amount ${missingAmount}`)
+
+      response = {
+        status: "ok",
+        result: {
+          txHash: tx.hash,
+          projectWalletId: projectId,
+          fundsReceived: fundsReceived,
+          funderAddress: firstEvent.args.funder,
+          missingAmount: missingAmount,
+          projectStatus: "FUNDING", // Cambiar estos valores si llega a haber segundo evento
+        }
+      }
     } else {
       console.error(`Project not funded in tx ${tx.hash}`);
+      return {
+        status: "failed",
+        error: `Couldn't fund project in tx ${tx.hash}`
+      }
     }
 
     const secondEvent = receipt && receipt.events && receipt.events[1];
     console.log(secondEvent);
+
     if (secondEvent && secondEvent.event == "ProjectStarted") {
       const projectId = secondEvent.args.projectId.toNumber();
-      console.log(tx.hash);
-      console.log(`Project started ${projectId}`) // Supuestamente esto es que no queda mas missing amount
-      // ToDo se podria devolver como un status nuevo del proyecto
+
+      console.log(`Project started ${projectId} in tx ${tx.hash}`)
+
+      response['result']['projectStatus'] = "IN_PROGRESS"
+    }
+
+    return response
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
     }
   });
-  return tx;
 };
 
 const reviewProject = ({ config }) => async ( // El que firma el contrato tiene que ser el reviewer
@@ -80,32 +140,105 @@ const reviewProject = ({ config }) => async ( // El que firma el contrato tiene 
 ) => {
   const bookBnb = await getContract(config, reviewerWallet);
   const tx = await bookBnb.setCompletedStage(projectId, completedStage)
-  tx.wait(1).then(receipt => {
+  return tx.wait(1).then(receipt => {
     console.log("Transaction mined");
+    response = {}
+
     const firstEvent = receipt && receipt.events && receipt.events[0];
     console.log(firstEvent);
+
     if (firstEvent && firstEvent.event == "StageCompleted") {
       const projectId = firstEvent.args.projectId.toNumber();
+      const stageCompleted = firstEvent.args.stageCompleted.toNumber();
+
       console.log(`project ${projectId} completed stage ${firstEvent.args.stageCompleted}`);
-      // ToDo se podria devolver esta info en el response
+      
+      response = {
+        status: "ok",
+        result: {
+          txHash: tx.hash,
+          projectWalletId: projectId,
+          stageCompleted: stageCompleted,
+          projectStatus: "IN_PROGRESS", // Cambiar estos valores si llega a haber segundo evento
+        }
+      }
     } else {
-      console.error(`Project not advanced from stage in tx ${tx.hash}`);
+      console.error(`Project not funded in tx ${tx.hash}`);
+      return {
+        status: "failed",
+        error: `Couldn't fund project in tx ${tx.hash}`
+      }
     }
 
-    const secondEvent = receipt && receipt.events && receipt.events[0];
+    const secondEvent = receipt && receipt.events && receipt.events[1];
     console.log(secondEvent);
     if (secondEvent && secondEvent.event == "ProjectCompleted") {
       const projectId = secondEvent.args.projectId.toNumber();
       console.log(`project ${projectId} completed all stages !`);
-      // ToDo se podria devolver esta info en el response
+      
+      response['result']['projectStatus'] = "COMPLETED"
+    }
+
+    return response
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
     }
   });
-  return tx;
 };
 
-const getProject = () => async id => {
-  console.log(`Getting project ${id}: ${projects[id]}`);
-  return projects[id];
+const sendFunds = ({ config }) => async (
+  ownerWallet,
+  destinationAddress,
+  amount
+) => {
+  const bookBnb = await getContract(config, ownerWallet);
+  
+  console.log(amount)
+  console.log("llegaaa")
+  const tx = await bookBnb.sendViaTransfer(destinationAddress, { value: toWei(amount) });
+  return tx.wait(1).then(receipt => {
+    console.log("Transaction mined");
+
+    const firstEvent = receipt && receipt.events && receipt.events[0];
+    console.log(firstEvent);
+    
+    if (firstEvent && firstEvent.event == "FundsSent") {
+
+      return {
+        status: "ok",
+        result: {
+          txHash: tx.hash, // Si no funciona utilizar JSON.stringify(tx)
+          destinationAddress: destinationAddress,
+          amountSent: amount
+        }
+      }
+    } else {
+      console.error(`Amount not sent in tx ${tx.hash}`);
+      
+      return {
+        status: "failed",
+        error: `Couldn't send the amount in tx ${tx.hash}`
+      }
+    }
+  }).catch(e => {
+    console.log(e)
+
+    return {
+        status: "failed",
+        error: `Tx throwed exception: ${e}`
+    }
+  });
+};
+
+const getProject = ({ config }) => async (id, deployerWallet) => {
+  const bookBnb = await getContract(config, deployerWallet);
+  const projectStruct = await bookBnb.projects(id);
+  console.log(`projectStruct ${projectStruct}`)
+  return projectStruct
 };
 
 module.exports = dependencies => ({
@@ -113,4 +246,5 @@ module.exports = dependencies => ({
   getProject: getProject(dependencies),
   fundProject: fundProject(dependencies),
   reviewProject: reviewProject(dependencies),
+  sendFunds: sendFunds(dependencies)
 });

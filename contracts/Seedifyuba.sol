@@ -43,7 +43,9 @@ contract Seedifyuba is Ownable {
         @param funder Address that sent the funds
         @param funds Amount of funds sent
     */
-    event ProjectFunded(uint256 indexed projectId, address indexed funder, uint256 funds);
+    event ProjectFunded(uint256 indexed projectId, address indexed funder, uint256 funds, uint256 missingAmount);
+
+    event FundsSent(address indexed funder, uint256 funds);
 
     /**
         @notice Event emitted when a project starts, i.e. all the necessary funds were received
@@ -251,7 +253,7 @@ contract Seedifyuba is Ownable {
         uint256 amountReceived = Math.min(msg.value, project.missingAmount);
         project.missingAmount = project.missingAmount.sub(amountReceived);
         fundsSent[projectId][msg.sender] = fundsSent[projectId][msg.sender].add(amountReceived);
-        emit ProjectFunded(projectId, msg.sender, amountReceived);
+        emit ProjectFunded(projectId, msg.sender, amountReceived, project.missingAmount);
         if (project.missingAmount == 0) {
             project.state = State.IN_PROGRESS;
             project.owner.transfer(project.stagesCost[0]);
@@ -295,6 +297,11 @@ contract Seedifyuba is Ownable {
         require(availableFunds > 0, "no funds to withdraw");
 
         _withdrawFunds(projectId, availableFunds);
+    }
+
+    function sendViaTransfer(address payable _to) public payable {
+        _to.transfer(msg.value);
+        emit FundsSent(_to, msg.value);
     }
 
     /**
